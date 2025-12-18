@@ -187,20 +187,20 @@ void simple_sound_test(void) {
     // Тест 1: постоянный сигнал
     send_uart_line("Тест 1: Постоянный сигнал 440 Гц");
     uint32_t arr = calculate_arr_for_freq(440);
-    __HAL_TIM_SET_AUTORELOAD(&htim1, arr);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr / 2);
+    __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, arr / 2);
     HAL_Delay(1000);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
     HAL_Delay(200);
 
     // Тест 2: короткие сигналы
     send_uart_line("Тест 2: Короткие сигналы");
     for (int i = 0; i < 5; i++) {
         arr = calculate_arr_for_freq(440 + i * 100);
-        __HAL_TIM_SET_AUTORELOAD(&htim1, arr);
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr / 2);
+        __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, arr / 2);
         HAL_Delay(100);
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
         HAL_Delay(100);
     }
 
@@ -208,11 +208,11 @@ void simple_sound_test(void) {
     send_uart_line("Тест 3: Сирена");
     for (int i = 0; i < 20; i++) {
         arr = calculate_arr_for_freq(300 + i * 20);
-        __HAL_TIM_SET_AUTORELOAD(&htim1, arr);
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr / 2);
+        __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, arr / 2);
         HAL_Delay(50);
     }
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
     send_uart_line("Тест завершен");
 }
@@ -224,14 +224,14 @@ void test_sound(uint32_t freq_hz, uint32_t duration_ms) {
     send_uart_line(msg);
 
     uint32_t arr = calculate_arr_for_freq(freq_hz);
-    snprintf(msg, sizeof(msg), "ARR: %lu, Prescaler: %lu", arr, htim1.Init.Prescaler);
+    snprintf(msg, sizeof(msg), "ARR: %lu, Prescaler: %lu", arr, htim2.Init.Prescaler);
     send_uart_line(msg);
 
     if (arr > 0 && arr <= 65535) {
-        __HAL_TIM_SET_AUTORELOAD(&htim1, arr);
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr / 2);
+        __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, arr / 2);
         HAL_Delay(duration_ms);
-        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
     } else {
         send_uart_line("Ошибка: неверный ARR");
     }
@@ -240,13 +240,13 @@ void test_sound(uint32_t freq_hz, uint32_t duration_ms) {
 
 // Проверка конфигурации таймеров
 void check_tim_config(void) {
-    uint32_t tim1_clock = SystemCoreClock / (htim1.Init.Prescaler + 1);
+    uint32_t tim2_clock = SystemCoreClock / (htim2.Init.Prescaler + 1);
     uint32_t tim6_clock = SystemCoreClock / (htim6.Init.Prescaler + 1);
 
     char status[256];
     snprintf(status, sizeof(status),
         "\r\n=== КОНФИГУРАЦИЯ ТАЙМЕРОВ ===\r\n"
-        "TIM1 (PWM/Звук):\r\n"
+        "TIM2 (PWM/Звук):\r\n"
         "  Prescaler: %lu\r\n"
         "  Period (ARR): %lu\r\n"
         "  Тактовая частота: %lu Гц\r\n"
@@ -256,10 +256,10 @@ void check_tim_config(void) {
         "  Period: %lu\r\n"
         "  Тактовая частота: %lu Гц\r\n"
         "  Частота прерываний: %lu Гц\r\n",
-        htim1.Init.Prescaler,
-        htim1.Init.Period,
-        tim1_clock,
-        tim1_clock / (htim1.Init.Period + 1),
+        htim2.Init.Prescaler,
+        htim2.Init.Period,
+        tim2_clock,
+        tim2_clock / (htim2.Init.Period + 1),
         htim6.Init.Prescaler,
         htim6.Init.Period,
         tim6_clock,
@@ -274,8 +274,8 @@ void debug_send_status(void) {
              "\r\n=== СТАТУС СИСТЕМЫ ===\r\n"
              "System Clock: %lu Hz\r\n"
              "UART BaudRate: %lu\r\n"
-             "TIM1 Prescaler: %lu\r\n"
-             "TIM1 ARR: %lu\r\n"
+             "TIM2 Prescaler: %lu\r\n"
+             "TIM2 ARR: %lu\r\n"
              "TIM6 Prescaler: %lu\r\n"
              "TIM6 ARR: %lu\r\n"
              "Трек играет: %s\r\n"
@@ -283,8 +283,8 @@ void debug_send_status(void) {
              "PD13 (Status LED): %s\r\n",
              SystemCoreClock,
              huart6.Init.BaudRate,
-             htim1.Init.Prescaler,
-             __HAL_TIM_GET_AUTORELOAD(&htim1),
+             htim2.Init.Prescaler,
+             __HAL_TIM_GET_AUTORELOAD(&htim2),
              htim6.Init.Prescaler,
              __HAL_TIM_GET_AUTORELOAD(&htim6),
              is_track_playing ? "ДА" : "НЕТ",
@@ -421,7 +421,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (track_position >= track_notes_count) {
             is_track_playing = false;
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
             return;
         }
 
@@ -431,15 +431,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         current_duration = note_duration;
 
         if (note_freq == 0) {
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
         } else {
             // ПРОСТОЙ РАСЧЕТ КАК В РАБОЧЕМ КОДЕ
             uint32_t arr_value = 2000000 / note_freq - 1;
             if (arr_value > 100 && arr_value < 65535) {
-                __HAL_TIM_SET_AUTORELOAD(&htim1, arr_value);
-                __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, arr_value / 2);
+                __HAL_TIM_SET_AUTORELOAD(&htim2, arr_value);
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, arr_value / 2);
             } else {
-                __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
             }
         }
 
@@ -475,7 +475,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART6_UART_Init();
-  MX_TIM1_Init();
+  MX_TIM2_Init();
   MX_TIM6_Init();
 
   /* USER CODE BEGIN 2 */
@@ -492,11 +492,11 @@ int main(void)
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
 
   // 3. Запуск таймеров КАК В РАБОЧЕМ КОДЕ
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_Base_Start_IT(&htim6);
 
   // 4. Установите начальное значение PWM в 0
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
   // 5. Активация UART
   HAL_UART_Receive_IT(&huart6, (uint8_t*)&uart_rx_char, 1);
@@ -507,10 +507,10 @@ int main(void)
 
   // 7. Тестовый звук - КОРОТКИЙ и ПРОСТОЙ
   uint32_t test_arr = (2000000 / 440) - 1;  // 440 Гц
-  __HAL_TIM_SET_AUTORELOAD(&htim1, test_arr);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, test_arr / 2);
+  __HAL_TIM_SET_AUTORELOAD(&htim2, test_arr);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, test_arr / 2);
   HAL_Delay(200);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
   // 8. Вывод меню
   send_uart_line("Команды: 1-4 мелодии, ? меню");
@@ -706,7 +706,7 @@ int main(void)
         case 'x':
           send_uart_line("Воспроизведение остановлено");
           is_track_playing = false;
-          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+          __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
           HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
           break;
 
